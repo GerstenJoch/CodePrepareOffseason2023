@@ -89,7 +89,6 @@ public class MecanumDrivetrain {
         double cur_y = (leftEncoder.getCurrentPosition() + rightEncoder.getCurrentPosition()) * 0.5 * cmPerTickY;
         double Vy, Vx, FWD, STR;
         while (myOpMode.opModeIsActive() && (target_x - cur_x > -0.05 && target_x - cur_x < 0.05) && (target_y - cur_y > -0.05 && target_y - cur_y < 0.05)) {
-
             Vy = ((target_x-cur_x) * Math.sin(heading) + (target_y-cur_y) * Math.cos(heading));
             Vx = ((target_x-cur_x) * Math.cos(heading) - (target_y-cur_y) * Math.sin(heading));
             if (!(target_y - cur_y > -0.05 && target_y - cur_y < 0.05))
@@ -105,6 +104,9 @@ public class MecanumDrivetrain {
             FrontR.setPower(FWD - STR - turn);
             BackL.setPower(FWD - STR + turn);
             BackR.setPower(FWD + STR - turn);
+
+            cur_x = middleEncoder.getCurrentPosition() * cmPerTickX;
+            cur_y = (leftEncoder.getCurrentPosition() + rightEncoder.getCurrentPosition()) * 0.5 * cmPerTickY;
         }
 
     }
