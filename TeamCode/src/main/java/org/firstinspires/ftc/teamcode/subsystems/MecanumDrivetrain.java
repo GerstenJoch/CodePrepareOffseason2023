@@ -56,7 +56,7 @@ public class MecanumDrivetrain {
         new Thread(() -> getCurrentHeading()).start();
     }
     public void FieldCentric(double speed) {
-        double theta = currentHeading + (3.1415 / 2);
+        double theta = currentHeading + (Math.PI / 2);
         double FWD = (myOpMode.gamepad1.left_stick_x * Math.sin(theta) + myOpMode.gamepad1.left_stick_y * Math.cos(theta));
         double STR = (myOpMode.gamepad1.left_stick_x * Math.cos(theta) - myOpMode.gamepad1.left_stick_y * Math.sin(theta));
         double ROT = myOpMode.gamepad1.right_stick_x;
@@ -86,7 +86,7 @@ public class MecanumDrivetrain {
     public void Drive(double target_x, double target_y, double speed) {
         double Kp = 0.03;
         double turn;
-        double heading = currentHeading + (3.1415 / 2);
+        double heading = currentHeading + (Math.PI / 2);
         double cur_x = middleEncoder.getCurrentPosition() * cmPerTickX;
         double cur_y = (leftEncoder.getCurrentPosition() + rightEncoder.getCurrentPosition()) * 0.5 * cmPerTickY;
         double Vy, Vx, FWD, STR;
@@ -110,6 +110,34 @@ public class MecanumDrivetrain {
             cur_x = middleEncoder.getCurrentPosition() * cmPerTickX;
             cur_y = (leftEncoder.getCurrentPosition() + rightEncoder.getCurrentPosition()) * 0.5 * cmPerTickY;
         }
+        Stop();
+    }
+    public void RotateToHeading(double heading, double speed) {
+        double error = 20*speed;
+        double cur_heading = Math.toDegrees(getTargetHeading((int) (-1*currentHeading)));
+        double target_heading = getTargetHeading(heading);
+        int direction = checkDirection(cur_heading-target_heading);
+        while (cur_heading < target_heading +(error * direction) && myOpMode.opModeIsActive()) {
+            FrontR.setPower(speed * direction);
+            FrontL.setPower(speed  * -1 * direction);
+            BackR.setPower(speed * direction);
+            BackL.setPower(speed  * -1 * direction);
+
+            cur_heading = Math.toDegrees(getTargetHeading((int) (-1*currentHeading)));
+            direction = checkDirection(cur_heading-target_heading);
+        }
+        Stop();
+    }
+    public void Stop(){
+        FrontL.setPower(0);
+        FrontR.setPower(0);
+        BackL.setPower(0);
+        BackR.setPower(0);
+
+        FrontL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FrontR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
     int checkDirection(double val){
         if (val < 0)
@@ -119,15 +147,16 @@ public class MecanumDrivetrain {
 
     public void getCurrentHeading() { //Threaded
         while (myOpMode.opModeIsActive()){
-            anglesHead   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-            currentHeading = getTargetHeading((int)(-1*anglesHead.firstAngle));
+            anglesHead   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+            currentHeading = (anglesHead.firstAngle);
+            //currentHeading = getTargetHeading((int)(-1*anglesHead.firstAngle));
         }
     }
     public double getTargetHeading(double heading) {
         if(heading>181&&heading<360){
-            return heading-360;
+            heading -= 360;
         }
-        else return heading;
+        return heading;
     }
     public void resetIMU() {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
