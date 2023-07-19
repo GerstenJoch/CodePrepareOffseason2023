@@ -27,6 +27,7 @@ public class MecanumDrivetrain {
     public static double cmPerTickX = 0.0018;
 
     private DcMotor leftEncoder, middleEncoder, rightEncoder;
+    private double currentHeading;
 
     public MecanumDrivetrain(LinearOpMode opmode) {myOpMode = opmode;}
     public void init() {
@@ -52,9 +53,10 @@ public class MecanumDrivetrain {
         middleEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         resetIMU();
+        new Thread(() -> getCurrentHeading()).start();
     }
     public void FieldCentric(double speed) {
-        double theta = getCurrentHeading() + (3.1415 / 2);
+        double theta = currentHeading + (3.1415 / 2);
         double FWD = (myOpMode.gamepad1.left_stick_x * Math.sin(theta) + myOpMode.gamepad1.left_stick_y * Math.cos(theta));
         double STR = (myOpMode.gamepad1.left_stick_x * Math.cos(theta) - myOpMode.gamepad1.left_stick_y * Math.sin(theta));
         double ROT = myOpMode.gamepad1.right_stick_x;
@@ -84,7 +86,7 @@ public class MecanumDrivetrain {
     public void Drive(double target_x, double target_y, double speed) {
         double Kp = 0.03;
         double turn;
-        double heading = getCurrentHeading() + (3.1415 / 2);
+        double heading = currentHeading + (3.1415 / 2);
         double cur_x = middleEncoder.getCurrentPosition() * cmPerTickX;
         double cur_y = (leftEncoder.getCurrentPosition() + rightEncoder.getCurrentPosition()) * 0.5 * cmPerTickY;
         double Vy, Vx, FWD, STR;
@@ -98,7 +100,7 @@ public class MecanumDrivetrain {
                 STR = speed / (Vy + Vx) * Vx * checkDirection(target_x - cur_x);
             else STR = 0;
 
-            turn = Kp*Math.abs(speed)*(getTargetHeading(heading)-getCurrentHeading());
+            turn = Kp*Math.abs(speed)*(getTargetHeading(heading)-currentHeading);
 
             FrontL.setPower(FWD + STR + turn);
             FrontR.setPower(FWD - STR - turn);
@@ -108,7 +110,6 @@ public class MecanumDrivetrain {
             cur_x = middleEncoder.getCurrentPosition() * cmPerTickX;
             cur_y = (leftEncoder.getCurrentPosition() + rightEncoder.getCurrentPosition()) * 0.5 * cmPerTickY;
         }
-
     }
     int checkDirection(double val){
         if (val < 0)
@@ -116,9 +117,11 @@ public class MecanumDrivetrain {
         else return 1;
     }
 
-    public double getCurrentHeading() {
-        anglesHead   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        return getTargetHeading((int)(-1*anglesHead.firstAngle));
+    public void getCurrentHeading() { //Threaded
+        while (myOpMode.opModeIsActive()){
+            anglesHead   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            currentHeading = getTargetHeading((int)(-1*anglesHead.firstAngle));
+        }
     }
     public double getTargetHeading(double heading) {
         if(heading>181&&heading<360){

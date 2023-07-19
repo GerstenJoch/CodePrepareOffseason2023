@@ -5,7 +5,7 @@ repositories {
     flatDir {
         dirs rootProject.file('libs')
     }
-    maven { url 'https://jitpack.io'}
+    maven { url = 'https://jitpack.io'}
 
 }
 
@@ -24,5 +24,6 @@ dependencies {
     implementation 'org.firstinspires.ftc:gameAssets-PowerPlay:1.0.0'
     implementation 'org.firstinspires.ftc:Vision:8.2.0'
     implementation 'com.acmerobotics.dashboard:dashboard:0.4.9'
+    implementation 'com.github.Eeshwar-Krishnan:PhotonFTC:v2.0.4'
 }
 
